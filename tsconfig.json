@@ -1,0 +1,42 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "useDefineForClassFields": false,
+    "allowSyntheticDefaultImports": true,
+    "target": "ES2021",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "incremental": true,
+    "skipLibCheck": true,
+    "strictNullChecks": true,
+    "noImplicitAny": true,
+    "strictBindCallApply": true,
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": true,
+    "paths": {
+      "@app/entities/*": [
+        "src/libs/entities/*"
+      ],
+      "@app/interfaces/*": [
+        "src/libs/interfaces/*"
+      ],
+      "@app/services/*": [
+        "src/libs/services/*"
+      ],
+      "@app/config/*": [
+        "src/libs/config/*"
+      ],
+      "@app/redis/*": [
+        "src/libs/redis/*"
+      ],
+      "@app/socket/*": [
+        "src/socket/*"
+      ],
+    }
+  }
+}

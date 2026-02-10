@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StarSync Share Socket Tester</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      display: flex;
+      min-height: 100vh;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .card {
+      width: 100%;
+      max-width: 960px;
+      background: rgba(15, 23, 42, 0.85);
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(148, 163, 184, 0.1);
+      display: grid;
+      grid-template-columns: minmax(0, 420px) minmax(0, 1fr);
+      overflow: hidden;
+    }
+    .panel {
+      padding: 28px;
+      border-right: 1px solid rgba(148, 163, 184, 0.08);
+    }
+    .panel:last-child {
+      border-right: none;
+    }
+    h1 {
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+    p.tagline {
+      margin: 0 0 24px;
+      color: #94a3b8;
+      font-size: 15px;
+    }
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #cbd5f5;
+    }
+    input, textarea, select {
+      width: 100%;
+      background: rgba(30, 41, 59, 0.85);
+      border: 1px solid rgba(148, 163, 184, 0.1);
+      border-radius: 10px;
+      padding: 12px;
+      color: #fff;
+      margin-bottom: 16px;
+      font-size: 14px;
+      transition: border 0.2s, box-shadow 0.2s;
+    }
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: #60a5fa;
+      box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.25);
+    }
+    textarea {
+      resize: vertical;
+      min-height: 120px;
+      font-family: "Fira Code", "Consolas", monospace;
+    }
+    button {
+      background: linear-gradient(135deg, #60a5fa, #38bdf8);
+      border: none;
+      padding: 12px 18px;
+      border-radius: 12px;
+      font-weight: 600;
+      color: #0f172a;
+      cursor: pointer;
+      margin-right: 12px;
+      margin-top: 8px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    button.danger {
+      background: linear-gradient(135deg, #f97316, #ef4444);
+      color: #fff;
+    }
+    button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+    button:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px rgba(96, 165, 250, 0.3);
+    }
+    .log-view {
+      background: rgba(15, 23, 42, 0.7);
+      border-radius: 16px;
+      border: 1px solid rgba(148, 163, 184, 0.08);
+      padding: 18px;
+      height: 520px;
+      overflow-y: auto;
+      font-family: "Fira Code", "Consolas", monospace;
+      font-size: 13px;
+    }
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      background: rgba(148, 163, 184, 0.12);
+      color: #94a3b8;
+      margin-bottom: 20px;
+    }
+    .status-pill.connected {
+      background: rgba(74, 222, 128, 0.18);
+      color: #4ade80;
+    }
+    .log-entry {
+      margin-bottom: 10px;
+      line-height: 1.45;
+    }
+    .log-entry .ts {
+      color: #60a5fa;
+      padding-right: 8px;
+    }
+    .log-entry.warn {
+      color: #fbbf24;
+    }
+    .log-entry.error {
+      color: #f87171;
+    }
+    .inline {
+      display: flex;
+      gap: 12px;
+    }
+    .inline > div {
+      flex: 1;
+    }
+    @media (max-width: 900px) {
+      body {
+        padding: 12px;
+      }
+      .card {
+        grid-template-columns: 1fr;
+      }
+      .panel {
+        border-right: none;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+      }
+      .panel:last-child {
+        border-bottom: none;
+      }
+      .log-view {
+        height: 260px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="panel">
+      <h1>Share Socket Tester</h1>
+      <p class="tagline">Connect to the StarSync backend and inspect <code>registerUser</code> / <code>shareProject</code> payloads.</p>
+
+      <div id="connectionStatus" class="status-pill">● Disconnected</div>
+
+      <label for="endpoint">WebSocket Endpoint</label>
+      <input id="endpoint" type="text" value="ws://127.0.0.1:4000" />
+
+      <div class="inline">
+        <div>
+          <label for="senderId">Sender ID</label>
+          <input id="senderId" type="text" placeholder="uuid-sender-player" />
+        </div>
+        <div>
+          <label for="senderName">Sender Username</label>
+          <input id="senderName" type="text" placeholder="sender_username" />
+        </div>
+      </div>
+
+      <div class="inline">
+        <div>
+          <label for="recipientId">Recipient ID</label>
+          <input id="recipientId" type="text" placeholder="uuid-recipient" />
+        </div>
+        <div>
+          <label for="recipientName">Recipient Username</label>
+          <input id="recipientName" type="text" placeholder="recipient_username" />
+        </div>
+      </div>
+
+      <label for="projectName">Project Name</label>
+      <input id="projectName" type="text" placeholder="My Awesome Track" />
+
+      <label for="patternsJson">Patterns JSON (serializePatternsToJson)</label>
+      <textarea id="patternsJson" placeholder='{ "patternA": { ... } }'>{}</textarea>
+
+      <label for="playlistJson">Playlist JSON (serializePlaylistToJson)</label>
+      <textarea id="playlistJson" placeholder='{ "tracks": [ ... ] }'>{}</textarea>
+
+      <div>
+        <button id="connectBtn">Connect</button>
+        <button id="registerBtn" disabled>Register User</button>
+        <button id="shareBtn" disabled>Send Share Project</button>
+        <button id="clearLogsBtn" class="danger">Clear Logs</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2 style="margin-bottom: 12px;">Console</h2>
+      <div id="logView" class="log-view"></div>
+    </div>
+  </div>
+
+  <script>
+    const endpointEl = document.getElementById('endpoint');
+    const senderIdEl = document.getElementById('senderId');
+    const senderNameEl = document.getElementById('senderName');
+    const recipientIdEl = document.getElementById('recipientId');
+    const recipientNameEl = document.getElementById('recipientName');
+    const projectNameEl = document.getElementById('projectName');
+    const patternsEl = document.getElementById('patternsJson');
+    const playlistEl = document.getElementById('playlistJson');
+    const connectBtn = document.getElementById('connectBtn');
+    const registerBtn = document.getElementById('registerBtn');
+    const shareBtn = document.getElementById('shareBtn');
+    const clearLogsBtn = document.getElementById('clearLogsBtn');
+    const logView = document.getElementById('logView');
+    const statusPill = document.getElementById('connectionStatus');
+
+    let socket = null;
+    let keepAliveHandle = null;
+
+    connectBtn.addEventListener('click', () => {
+      if (!socket || socket.readyState === WebSocket.CLOSED) {
+        connectSocket();
+      } else {
+        addLog('warn', 'Closing existing socket connection…');
+        socket.close();
+      }
+    });
+
+    registerBtn.addEventListener('click', sendRegister);
+    shareBtn.addEventListener('click', sendShare);
+    clearLogsBtn.addEventListener('click', () => (logView.innerHTML = ''));
+
+    function connectSocket() {
+      const endpoint = endpointEl.value.trim();
+      if (!endpoint) {
+        addLog('error', 'Please enter a WebSocket endpoint.');
+        return;
+      }
+
+      addLog('info', `Connecting to ${endpoint} …`);
+      try {
+        // Try native WebSocket first
+        socket = new WebSocket(endpoint);
+        addLog('info', 'Using native WebSocket transport.');
+      } catch (err) {
+        addLog('warn', `Native WebSocket failed (${err.message}). Falling back to Socket.IO...`);
+        socket = null;
+        setTimeout(() => initSocketIo(endpoint), 0);
+        return;
+      }
+      updateStatus(false);
+      connectBtn.textContent = 'Disconnect';
+
+      socket.addEventListener('open', () => {
+        addLog('info', 'Socket connected');
+        updateStatus(true);
+        registerBtn.disabled = false;
+        shareBtn.disabled = false;
+        startKeepAlive();
+      });
+
+      socket.addEventListener('message', handleNativeMessage);
+      socket.addEventListener('error', handleNativeError);
+      socket.addEventListener('close', handleNativeClose);
+    }
+
+    function initSocketIo(endpoint) {
+      try {
+        const scriptId = 'socket-io-cdn';
+        if (!document.getElementById(scriptId)) {
+          const script = document.createElement('script');
+          script.id = scriptId;
+          script.src = 'https://cdn.socket.io/4.7.2/socket.io.min.js';
+          script.onload = () => {
+            addLog('info', 'Socket.IO library loaded.');
+            initSocketIo(endpoint);
+          };
+          script.onerror = () => addLog('error', 'Failed to load Socket.IO library.');
+          document.head.appendChild(script);
+          return;
+        }
+
+        const baseUrl = endpoint.replace(/^ws/, 'http');
+        addLog('info', `Connecting via Socket.IO to ${baseUrl} ...`);
+        socket = io(baseUrl, { transports: ['websocket'] });
+
+        socket.on('connect', () => {
+          addLog('info', `Socket.IO connected: ${socket.id}`);
+          updateStatus(true);
+          registerBtn.disabled = false;
+          shareBtn.disabled = false;
+          connectBtn.textContent = 'Disconnect';
+          startKeepAlive();
+        });
+
+        socket.on('disconnect', (reason) => {
+          addLog('warn', `Socket.IO disconnected: ${reason}`);
+          updateStatus(false);
+          registerBtn.disabled = true;
+          shareBtn.disabled = true;
+          connectBtn.textContent = 'Connect';
+          stopKeepAlive();
+        });
+
+        socket.on('connect_error', (err) => {
+          addLog('error', `Socket.IO connect_error: ${err.message}`);
+        });
+
+        socket.onAny((event, payload) => {
+          addLog('info', `Socket.IO message "${event}":\n${JSON.stringify(payload, null, 2)}`);
+        });
+      } catch (err) {
+        addLog('error', `Socket.IO initialization failed: ${err.message}`);
+      }
+    }
+
+    function handleNativeMessage(event) {
+      try {
+        const data = JSON.parse(event.data);
+        addLog('info', `Message received:\n${JSON.stringify(data, null, 2)}`);
+      } catch (err) {
+        addLog('warn', `Non-JSON message: ${event.data}`);
+      }
+    }
+
+    function handleNativeError(event) {
+      addLog('error', `WebSocket error: ${event.message || event.type}`);
+    }
+
+    function handleNativeClose(event) {
+      addLog(
+        'warn',
+        `Socket closed (code ${event.code}${
+          event.reason ? `, reason: ${event.reason}` : ''
+        })`,
+      );
+      updateStatus(false);
+      registerBtn.disabled = true;
+      shareBtn.disabled = true;
+      connectBtn.textContent = 'Connect';
+      stopKeepAlive();
+    }
+
+    function sendRegister() {
+      if (!ensureSocketReady()) return;
+
+      const senderId = senderIdEl.value.trim();
+      if (!senderId) {
+        addLog('error', 'Please enter a sender ID before registering.');
+        return;
+      }
+
+      const payload = {
+        event: 'registerUser',
+        data: { userId: senderId },
+      };
+
+      addLog('info', `Sending registerUser:\n${JSON.stringify(payload, null, 2)}`);
+      emitMessage(payload);
+    }
+
+    function sendShare() {
+      if (!ensureSocketReady()) return;
+
+      const senderId = senderIdEl.value.trim();
+      const senderUsername = senderNameEl.value.trim();
+      const recipientId = recipientIdEl.value.trim();
+      const recipientUsername = recipientNameEl.value.trim();
+      const projectName = projectNameEl.value.trim() || 'Untitled Project';
+
+      if (!senderId || !recipientId) {
+        addLog('error', 'Sender ID and recipient ID are required.');
+        return;
+      }
+
+      let patterns = {};
+      let playlist = {};
+      try {
+        patterns = JSON.parse(patternsEl.value || '{}');
+      } catch (err) {
+        addLog('error', `Patterns JSON invalid: ${err.message}`);
+        return;
+      }
+      try {
+        playlist = JSON.parse(playlistEl.value || '{}');
+      } catch (err) {
+        addLog('error', `Playlist JSON invalid: ${err.message}`);
+        return;
+      }
+
+      const now = new Date().toISOString();
+      const payload = {
+        event: 'shareProject',
+        data: {
+          senderId,
+          recipientId,
+          recipientUsername,
+          projectName,
+          projectData: {
+            version: '1.0',
+            name: projectName,
+            created: now,
+            modified: now,
+            patterns,
+            playlist,
+          },
+        },
+      };
+
+      if (senderUsername) {
+        payload.data.senderUsername = senderUsername;
+      }
+
+      addLog('info', `Sending shareProject:\n${JSON.stringify(payload, null, 2)}`);
+      emitMessage(payload);
+    }
+
+    function isUsingSocketIo() {
+      return socket && typeof socket.emit === 'function';
+    }
+
+    function emitMessage(payload) {
+      if (isUsingSocketIo()) {
+        // Socket.IO: emit the event name and data separately
+        socket.emit(payload.event, payload.data);
+      } else {
+        // Native WebSocket: send JSON string
+        socket.send(JSON.stringify(payload));
+      }
+    }
+
+    function ensureSocketReady() {
+      if (!socket) {
+        addLog('error', 'Socket is not initialized.');
+        return false;
+      }
+
+      if (isUsingSocketIo()) {
+        if (!socket.connected) {
+          addLog('error', 'Socket.IO connection is not established.');
+          return false;
+        }
+        return true;
+      }
+
+      if (socket.readyState !== WebSocket.OPEN) {
+        addLog('error', 'Socket is not connected.');
+        return false;
+      }
+      return true;
+    }
+
+    function addLog(level, message) {
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${level}`;
+      const timestamp = new Date().toLocaleTimeString();
+      entry.innerHTML = `<span class="ts">[${timestamp}]</span>${message
+        .toString()
+        .replace(/\n/g, '<br/>')}`;
+
+      logView.appendChild(entry);
+      logView.scrollTop = logView.scrollHeight;
+    }
+
+    function updateStatus(connected) {
+      statusPill.textContent = connected ? '● Connected' : '● Disconnected';
+      statusPill.classList.toggle('connected', connected);
+    }
+
+    function startKeepAlive() {
+      stopKeepAlive();
+      keepAliveHandle = setInterval(() => {
+        if (!socket) {
+          return;
+        }
+        if (isUsingSocketIo()) {
+          socket.emit('ping', Date.now());
+          return;
+        }
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.send(JSON.stringify({ event: 'ping', data: Date.now() }));
+        }
+      }, 15000);
+    }
+
+    function stopKeepAlive() {
+      if (keepAliveHandle) {
+        clearInterval(keepAliveHandle);
+        keepAliveHandle = null;
+      }
+    }
+  </script>
+</body>
+</html>
+
