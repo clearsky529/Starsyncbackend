@@ -42,11 +42,7 @@
             justify-content: space-between;
             align-items: center;
         }
-        
-        .chat-header h2 {
-            font-size: 20px;
-            font-weight: 600;
-        }
+
         
         .user-badge {
             background: rgba(255,255,255,0.2);
