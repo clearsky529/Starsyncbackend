@@ -582,6 +582,9 @@
         // Add this to window for easy access from console
         window.clearMessages = clearMessages;
         window.loadHistory = () => loadMessages(1);
+
+        <!-- window.clearMessages = clearMessages;
+        window.loadHistory = () => loadMessages(1); -->
     </script>
 </body>
 </html>
