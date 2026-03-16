@@ -44,22 +44,6 @@
         }
 
         
-        .user-badge {
-            background: rgba(255,255,255,0.2);
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 500;
-        }
-        
-        .status-indicator {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 14px;
-            margin-top: 8px;
-        }
-        
         .status-dot {
             width: 10px;
             height: 10px;
